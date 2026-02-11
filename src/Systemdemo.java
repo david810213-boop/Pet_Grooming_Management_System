@@ -3,8 +3,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.management.Notification;
-
 import Appointment.AppointService;
 import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
@@ -103,8 +101,6 @@ public class Systemdemo {
             reminderService.scheduleReminder(appointment.getOwnerName(), appointment.getDate(), appointment.getStartTime());
 
             return;
-            
-
     }
     
 }
