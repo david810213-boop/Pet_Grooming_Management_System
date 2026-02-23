@@ -34,7 +34,7 @@ public class Systemtest {
             System.out.println("4. 預約服務");
             System.out.println("5. 查看使用者與寵物");
             System.out.println("6. 結帳服務");
-            System.out.println("7. 登出");
+            System.out.println("7. 查詢預約紀錄");
             System.out.println("0. 離開");
             System.out.print("請選擇功能: ");
             
@@ -103,6 +103,8 @@ public class Systemtest {
 
                     TimeSlot slot = new TimeSlot(date, start, end, true);
                     if (slot.isAvailable()) {
+                        
+                    
                     
                        // 顯示美容項目選單
                         System.out.println("\n=== 美容項目選單 ===");
@@ -135,7 +137,8 @@ public class Systemtest {
 
                         } else {
                                 System.out.println("預約失敗：該時段已有預約");
-                         }
+                        }
+
                          NotificationSystem.NotificationHandler handler = new NotificationSystem.NotificationHandler();
                             handler.addNotifier(new NotificationSystem.EmailNotifier());
                             handler.addNotifier(new NotificationSystem.SMSNotifier());
@@ -217,10 +220,25 @@ public class Systemtest {
                         System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
 
 
-                case 7: // 登出
-                    currentUser = null;
-                    System.out.println("已登出！");
-                    break;
+                case 7: // 查看預約
+                    if (currentUser == null) {
+                        System.out.println("請先登入！");
+                        break;
+                    }
+                    System.out.print("請輸入要查詢的 Email: ");
+                    String queryEmail = scanner.nextLine();
+
+                    List<AppointmentReceipt> receipts = manager.getReceiptsByUser(queryEmail);
+                    if (receipts.isEmpty()) {
+                        System.out.println("沒有找到該使用者的預約紀錄。");
+                        } else {
+                            System.out.println("=== 預約紀錄 ===");
+                            for (AppointmentReceipt r : receipts) {
+                                System.out.println(r);
+                            }
+                        }
+                        break;
+
 
                 case 0: // 離開
                     running = false;
