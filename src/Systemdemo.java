@@ -100,7 +100,7 @@ public class Systemdemo {
             handler.notifyAll(appointment.getOwnerName(), message);
             reminderService.scheduleReminder(appointment.getOwnerName(), appointment.getDate(), appointment.getStartTime());
 
-            return;
+            return;      
     }
     
 }
