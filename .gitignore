@@ -2,6 +2,10 @@
 *.class
 
 target/  # 忽略編譯後的目錄
+/build/
+/out/
+/bin/
+
 
 # Log file
 logs/*.log
@@ -31,7 +35,11 @@ replay_pid*
 #忽略所有IDE 的專案配置檔案(如 .vscode, .ideal等)
 .vscode/
 .ideal/ 
-.bin/
+.classpath
+.project
+.settings/
+
+
 
 #windows系統產生的檔案
 thumbs.db
