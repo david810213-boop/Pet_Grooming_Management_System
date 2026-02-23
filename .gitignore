@@ -1,8 +1,13 @@
 # Compiled class file
 *.class
 
+target/  # 忽略編譯後的目錄
+
 # Log file
-*.log
+logs/*.log
+!logs/.gitkeep
+
+
 
 # BlueJ files
 *.ctxt
@@ -23,8 +28,9 @@
 hs_err_pid*
 replay_pid*
 
-#針對vscode設定
+#忽略所有IDE 的專案配置檔案(如 .vscode, .ideal等)
 .vscode/
+.ideal/ 
 
 #windows系統產生的檔案
 thumbs.db
