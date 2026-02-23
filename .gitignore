@@ -31,7 +31,7 @@ replay_pid*
 #忽略所有IDE 的專案配置檔案(如 .vscode, .ideal等)
 .vscode/
 .ideal/ 
-.bin/
+/bin/
 
 #windows系統產生的檔案
 thumbs.db
