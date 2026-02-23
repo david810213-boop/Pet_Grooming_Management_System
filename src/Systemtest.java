@@ -33,8 +33,8 @@ public class Systemtest {
             System.out.println("3. 新增寵物");
             System.out.println("4. 預約服務");
             System.out.println("5. 查看使用者與寵物");
-            System.out.println("6. 結帳服務");
-            System.out.println("7. 查詢預約紀錄");
+            System.out.println("6. 查詢預約紀錄");
+            System.out.println("7. 結帳服務");
             System.out.println("0. 離開");
             System.out.print("請選擇功能: ");
             
@@ -163,7 +163,28 @@ public class Systemtest {
             
                     break;
 
-                case 6://結帳
+                case 6://查看預約紀錄
+                    if (currentUser == null) {
+                        System.out.println("請先登入！");
+                        break;
+                    }
+                    System.out.print("請輸入要查詢的 Email: ");
+                    String queryEmail = scanner.nextLine();
+
+                    List<AppointmentReceipt> receipts = manager.getReceiptsByUser(queryEmail);
+                    if (receipts.isEmpty()) {
+                        System.out.println("沒有找到該使用者的預約紀錄。");
+                        } else {
+                            System.out.println("=== 預約紀錄 ===");
+                            for (AppointmentReceipt r : receipts) {
+                                System.out.println(r);
+                            }
+                        }
+                        break;
+                    
+
+
+                case 7: // 結帳
                     if (currentUser == null) {
                         System.out.println("請先登入！");
                         break;
@@ -218,26 +239,7 @@ public class Systemtest {
                         boolean paymentSuccess = payment.processPayment(fee);
                         
                         System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
-
-
-                case 7: // 查看預約
-                    if (currentUser == null) {
-                        System.out.println("請先登入！");
-                        break;
-                    }
-                    System.out.print("請輸入要查詢的 Email: ");
-                    String queryEmail = scanner.nextLine();
-
-                    List<AppointmentReceipt> receipts = manager.getReceiptsByUser(queryEmail);
-                    if (receipts.isEmpty()) {
-                        System.out.println("沒有找到該使用者的預約紀錄。");
-                        } else {
-                            System.out.println("=== 預約紀錄 ===");
-                            for (AppointmentReceipt r : receipts) {
-                                System.out.println(r);
-                            }
-                        }
-                        break;
+                    
 
 
                 case 0: // 離開
