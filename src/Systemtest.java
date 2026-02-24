@@ -12,6 +12,7 @@ import Member.UserService;
 import Payment.CashPayment;
 import Payment.CreditCardPayment;
 import Payment.PaymentSystem;
+import Payment.Transaction;
 import PetManagement.Pet;
 import Service.GrommingItemCode;
 
@@ -246,7 +247,7 @@ public class Systemtest {
                         // === 新增交易紀錄 ===
                         if (paymentSuccess) {
                             for (AppointmentReceipt r : userReceipts) {
-                                Payment.Transaction transaction = new Payment.Transaction(
+                                Transaction transaction = new Transaction(
                                     r.getUserEmail(),
                                     r.getAppointmentId(),
                                     r.totalAmount
@@ -264,12 +265,12 @@ public class Systemtest {
                         break;
                     }
 
-                    List<Payment.Transaction> userTransactions = transactionManager.getTransactionsByUser(currentUser.getEmail());
+                    List<Transaction> userTransactions = transactionManager.getTransactionsByUser(currentUser.getEmail());
                     if (userTransactions.isEmpty()) {
                         System.out.println("您沒有任何交易紀錄。");
                     } else {
                         System.out.println("=== 您的交易紀錄 ===");
-                        for (Payment.Transaction t : userTransactions) {
+                        for (Transaction t : userTransactions) {
                             System.out.println(t);
                         }
                     }
