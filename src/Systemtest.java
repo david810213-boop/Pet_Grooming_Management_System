@@ -21,6 +21,7 @@ public class Systemtest {
     private static UserService userService = new UserService();
     private static User currentUser = null; 
     private static AppointmentManager manager = new AppointmentManager();
+    private static Payment.TransactionManager transactionManager = new Payment.TransactionManager();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -35,6 +36,7 @@ public class Systemtest {
             System.out.println("5. 查看使用者與寵物");
             System.out.println("6. 查詢預約紀錄");
             System.out.println("7. 結帳服務");
+            System.out.println("8. 查詢交易紀錄");
             System.out.println("0. 離開");
             System.out.print("請選擇功能: ");
             
@@ -94,6 +96,7 @@ public class Systemtest {
                         break;
                     }
                     System.out.println("=== 預約服務 ===");
+                    System.out.println("營業時間: 11:00 - 19:30");
                     System.out.print("日期 (yyyy-MM-dd): ");
                     LocalDate date = LocalDate.parse(scanner.nextLine());
                     System.out.print("開始時間 (HH:mm): ");
@@ -239,8 +242,38 @@ public class Systemtest {
                         boolean paymentSuccess = payment.processPayment(fee);
                         
                         System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
-                    
 
+                        // === 新增交易紀錄 ===
+                        if (paymentSuccess) {
+                            for (AppointmentReceipt r : userReceipts) {
+                                Payment.Transaction transaction = new Payment.Transaction(
+                                    r.getUserEmail(),
+                                    r.getAppointmentId(),
+                                    r.totalAmount
+                                );
+                                transaction.markPaid();
+                                transactionManager.addTransaction(transaction);
+                            }
+                            System.out.println("交易紀錄已更新！");
+                        }
+                        break;
+                
+                case 8: // 查詢交易紀錄
+                    if (currentUser == null) {
+                        System.out.println("請先登入！");
+                        break;
+                    }
+
+                    List<Payment.Transaction> userTransactions = transactionManager.getTransactionsByUser(currentUser.getEmail());
+                    if (userTransactions.isEmpty()) {
+                        System.out.println("您沒有任何交易紀錄。");
+                    } else {
+                        System.out.println("=== 您的交易紀錄 ===");
+                        for (Payment.Transaction t : userTransactions) {
+                            System.out.println(t);
+                        }
+                    }
+                    break;
 
                 case 0: // 離開
                     running = false;

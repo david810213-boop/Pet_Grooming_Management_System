@@ -15,12 +15,13 @@ public class AppointService {
 
     // 建立預約
     public String createAppointment(GroomingAppointment appointment) {
-         // 檢查時段是否可用
-        if (!timeSlotManager.isSlotAvailable(appointment.getDate(),
-                                             appointment.getStartTime(),
-                                             appointment.getEndTime())) {
-            return "預約失敗：該時段不可預約";
-        }
+         BusinessHours businessHours = new BusinessHours();
+
+    // 檢查是否在營業時間內
+    if (!businessHours.isWithinHours(appointment.getStartTime(), appointment.getEndTime())) {
+        return "預約失敗：超出營業時間 (11:00 - 19:30)";
+    }
+    
         // 新增預約
         appointments.add(appointment);
 

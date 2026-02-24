@@ -15,6 +15,9 @@ public class AppointmentReceipt {
     private LocalTime end;
     private List<GrommingItemCode.Item> items;
     public int totalAmount;
+    private boolean paid = false;
+
+
 
     public AppointmentReceipt(String userEmail,
                               LocalDate date, LocalTime start, LocalTime end,
@@ -41,9 +44,14 @@ public class AppointmentReceipt {
     }
     
 
-    public String getUserEmail() {
-        return userEmail;
-    }
+    // Getter
+    public String getAppointmentId() { return appointmentId; }
+    public String getUserEmail() { return userEmail; }
+    public boolean isPaid() { return paid; }
+
+    // Setter
+    public void markPaid() { this.paid = true; }
+
 
     @Override
     public String toString() {
@@ -59,6 +67,7 @@ public class AppointmentReceipt {
               .append(" ($").append(item.getPrice()).append(")\n");
         }
         sb.append("總金額: $").append(totalAmount).append("\n");
+        sb.append("付款狀態: ").append(paid ? "已付款" : "未付款").append("\n");
         sb.append("================\n");
         return sb.toString();
     }
