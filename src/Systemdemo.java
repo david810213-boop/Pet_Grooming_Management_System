@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Appointment.AppointService;
+import Appointment.AppointmentManager;
+import Appointment.AppointmentReceipt;
 import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
@@ -11,8 +13,16 @@ import Member.User;
 import Member.UserService;
 import PetManagement.Pet;
 import Service.GrommingItemCode.Item;
+import Payment.TransactionManager;
+import Payment.Transaction;
+import Payment.CashPayment;
+import Payment.CreditCardPayment;
+import Payment.PaymentSystem;
+
 
 public class Systemdemo {
+    private static TransactionManager transactionManager = new TransactionManager();
+
 
     public static void main(String[] args) {
         UserService userService = new UserService();
@@ -63,17 +73,11 @@ public class Systemdemo {
 
         //建立預約服務
         GroomingAppointment appointment = new GroomingAppointment(
-            "AP001",
-            "Lucky",
-            "Alice",
-            null,
-            LocalDate.of(2026, 1, 25),
-            LocalTime.of(10, 0),
+            "AP001","alice@example.com","Alice","Lucky",
+            LocalDate.of(2026, 2, 25),
+            LocalTime.of(11, 0),
             LocalTime.of(12, 0)
         );
-        // 使用預約服務
-        AppointService appointService = new AppointService();
-        appointService.createAppointment(appointment);
 
         // 選擇的美容項目
         List<Item> selectedServices = new ArrayList<>();
@@ -88,6 +92,18 @@ public class Systemdemo {
         }
         System.out.println("\n---預約成功---\n編號: " + appointment.getAppointmentId() + "\n預約美容項目: " + selectedServices.size() 
         + " \n總金額: " + totalAmount + " 元");
+
+        AppointmentManager appointmentManager = new AppointmentManager();
+        AppointmentReceipt receipt = new AppointmentReceipt(
+            appointment.getUserEmail(),
+            appointment.getDate(),
+            appointment.getStartTime(),
+            appointment.getEndTime(),
+            selectedServices
+        );
+            
+
+        appointmentManager.addReceipt(receipt);
         
         NotificationSystem.NotificationHandler handler = new NotificationSystem.NotificationHandler();
         NotificationSystem.ReminderService reminderService = new NotificationSystem.ReminderService(handler);
@@ -99,8 +115,51 @@ public class Systemdemo {
                             " 時間: " + appointment.getStartTime() + " - " + appointment.getEndTime();
             handler.notifyAll(appointment.getOwnerName(), message);
             reminderService.scheduleReminder(appointment.getOwnerName(), appointment.getDate(), appointment.getStartTime());
+            
+        // 查詢預約紀錄
+        
+        System.out.println("\n=== 查詢 Alice 的預約紀錄 ===");
+        for (AppointmentReceipt r : appointmentManager.getReceiptsByUser("alice@example.com")) {
+                System.out.println(r);
+        } 
+        // 結帳服務
+        System.out.println("\n=== Alice 結帳 ===");
+        List<AppointmentReceipt> aliceReceipts = appointmentManager.getReceiptsByUser("alice@example.com");
+        int fee = 0;
+        for (AppointmentReceipt r : aliceReceipts) {
+            fee += r.totalAmount;
+        }
 
-            return;      
+        System.out.println("總金額: $" + fee);
+
+        // 模擬選擇支付方式 (這裡直接用現金)
+        PaymentSystem payment = new CashPayment();
+        boolean paymentSuccess = payment.processPayment(fee);
+
+        System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
+
+        if (paymentSuccess) {
+            for (AppointmentReceipt r : aliceReceipts) {
+                r.markPaid(); // 更新預約紀錄付款狀態
+                Transaction transaction = new Transaction(
+                    r.getAppointmentId(),
+                    r.getUserEmail(),
+                    r.totalAmount
+                );
+                transaction.markPaid(); // 更新交易紀錄付款狀態
+                transactionManager.addTransaction(transaction);
+            }
+            System.out.println("交易紀錄已更新！");
+        }
+       
+        // 查詢交易紀錄
+        System.out.println("\n=== 查詢 Alice 的交易紀錄 ===");
+        for (Transaction t : transactionManager.getTransactionsByUser("alice@example.com")) {
+            System.out.println(t);
+        }
+
+        System.out.println("\n=== 商家查看所有交易紀錄 ===");
+        transactionManager.printAllTransactions();
     }
     
 }

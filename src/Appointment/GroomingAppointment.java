@@ -9,19 +9,21 @@ import Service.GrommingItemCode.Item;
 
 public class GroomingAppointment {
     private String appointmentId;
-    private String petName;
+    private String userEmail;
     private String ownerName;
+    private String petName;
     private List<Item> selectedServices; 
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
 
     
-    public GroomingAppointment(String appointmentId, String petName, String ownerName,
-            List<Item> selectedServices,LocalDate date, LocalTime startTime, LocalTime endTime) {
+    public GroomingAppointment(String appointmentId, String userEmail, String ownerName, String petName,
+            LocalDate date, LocalTime startTime, LocalTime endTime) {
         this.appointmentId = appointmentId;
-        this.petName = petName;
+        this.userEmail = userEmail;
         this.ownerName = ownerName;
+        this.petName = petName;
         this.selectedServices = selectedServices;
         this.date = date;
         this.startTime = startTime;
@@ -40,8 +42,9 @@ public class GroomingAppointment {
         
     
     public String getAppointmentId() {return appointmentId;}    
-    public String getPetName() { return petName; }
+    public String getUserEmail() { return userEmail; }
     public String getOwnerName() { return ownerName; }
+    public String getPetName() { return petName; }
     public List<Item> getSelectedServices() { return selectedServices; }
     public LocalDate getDate() { return date; }
     public LocalTime getStartTime() { return startTime; }

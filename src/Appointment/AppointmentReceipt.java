@@ -48,10 +48,14 @@ public class AppointmentReceipt {
     public String getAppointmentId() { return appointmentId; }
     public String getUserEmail() { return userEmail; }
     public boolean isPaid() { return paid; }
+    public LocalDate getDate() { return date; }
+    public LocalTime getStart() { return start; }
+    public LocalTime getEnd() { return end; }
+    public List<GrommingItemCode.Item> getItems() { return items; }
+    public int getTotalAmount() { return totalAmount;}
 
     // Setter
     public void markPaid() { this.paid = true; }
-
 
     @Override
     public String toString() {
