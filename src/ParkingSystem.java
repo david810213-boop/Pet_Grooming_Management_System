@@ -1,4 +1,5 @@
 public class ParkingSystem {
-    public static void main(String[] args) {System.out.println("Welcome to theOnline Parking System");
+    public static void main(String[] args) {
+        System.out.println("Welcome to the Online Parking System with Pricing Module");
     }
 }
