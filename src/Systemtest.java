@@ -7,6 +7,7 @@ import java.util.Scanner;
 import Appointment.AppointmentManager;
 import Appointment.AppointmentReceipt;
 import Appointment.TimeSlot.TimeSlot;
+import Appointment.TimeSlot.TimeSlotManager;
 import Member.User;
 import Member.UserService;
 import Payment.CashPayment;
@@ -21,6 +22,7 @@ import Service.GrommingItemCode;
 public class Systemtest {
     private static UserService userService = new UserService();
     private static User currentUser = null; 
+    private static TimeSlotManager timeSlotManager = new TimeSlotManager();
     private static AppointmentManager manager = new AppointmentManager();
     private static Payment.TransactionManager transactionManager = new Payment.TransactionManager();
     
@@ -96,66 +98,84 @@ public class Systemtest {
                         System.out.println("請先登入！");
                         break;
                     }
-                    System.out.println("=== 預約服務 ===");
-                    System.out.println("營業時間: 11:00 - 19:30");
-                    System.out.print("日期 (yyyy-MM-dd): ");
-                    LocalDate date = LocalDate.parse(scanner.nextLine());
-                    System.out.print("開始時間 (HH:mm): ");
-                    LocalTime start = LocalTime.parse(scanner.nextLine());
-                    System.out.print("結束時間 (HH:mm): ");
-                    LocalTime end = LocalTime.parse(scanner.nextLine());
+                        System.out.println("=== 預約服務 ===");
+                        System.out.println("營業時間: 11:00 - 19:30");
 
-                    TimeSlot slot = new TimeSlot(date, start, end, true);
-                    if (slot.isAvailable()) {
-                        
-                    
-                    
-                       // 顯示美容項目選單
+                        try {
+                        System.out.print("日期 (yyyy-MM-dd): ");
+                        LocalDate date = LocalDate.parse(scanner.nextLine());
+
+                        // 自動生成當日可預約時段
+                        timeSlotManager.generateDailySlots(date);
+
+                        System.out.println("\n=== 今日可預約時段 ===");
+                        List<TimeSlot> availableSlots = timeSlotManager.getAvailableSlots(date);
+                        if (availableSlots.isEmpty()) {
+                            System.out.println("今日沒有可預約時段。");
+                        } else {
+                            for (TimeSlot slot : availableSlots) {
+                                System.out.println(slot);
+                            }
+                        }
+
+                        System.out.print("開始時間 (HH:mm): ");
+                        LocalTime start = LocalTime.parse(scanner.nextLine());
+                        System.out.print("結束時間 (HH:mm): ");
+                        LocalTime end = LocalTime.parse(scanner.nextLine());
+
+                        LocalTime opening = LocalTime.of(11, 0);
+                        LocalTime closing = LocalTime.of(19, 30);
+
+                        if (start.isBefore(opening) || end.isAfter(closing)) {
+                            throw new IllegalArgumentException(
+                                "輸入時間超出營業時間範圍！請輸入 11:00–19:30 之間的時間。"
+                            );
+                        }
+                        TimeSlot slot = new TimeSlot(date, start, end, true);
+                        if (slot.isAvailable()) {
+                            System.out.println("時段可預約，建立預約...");
+                            
+                        // 顯示美容項目選單
                         System.out.println("\n=== 美容項目選單 ===");
                         for (GrommingItemCode.Item item : GrommingItemCode.Item.values()) {
-                            System.out.println(item);
-                        }
+                             System.out.println(item);
+                            }
 
                         // 使用者選擇美容項目
                         List<GrommingItemCode.Item> selectedItems = new ArrayList<>();
                         while (true) {
-                            System.out.print("輸入美容項目代碼 (或輸入 'done' 結束): ");
-                            String code = scanner.nextLine().trim().toUpperCase();
-
-                            if (code.equals("DONE")) break;
-
+                        System.out.print("輸入美容項目代碼 (或輸入 'done' 結束): ");
+                        String code = scanner.nextLine().trim().toUpperCase();
+                        if (code.equals("DONE")) break;
                             try {
-                                GrommingItemCode.Item selected = GrommingItemCode.Item.valueOf(code);
-                                selectedItems.add(selected);
-                                System.out.println("已加入: " + selected.getDescription() + " ($" + selected.getPrice() + ")");
+                                 GrommingItemCode.Item selected = GrommingItemCode.Item.valueOf(code);
+                                 selectedItems.add(selected);
+                                 System.out.println("已加入: " + selected.getDescription() + " ($" + selected.getPrice() + ")");
                             } catch (IllegalArgumentException e) {
-                                System.out.println("無效代碼，請重新輸入！");
-                            }
+                                        System.out.println("無效代碼，請重新輸入！");
+                                }
                         }
-                            slot.setAvailable(false); // 標記時段為不可用
-                            
-                            AppointmentReceipt receipt = new AppointmentReceipt(
-                                currentUser.getEmail(),date, start, end,selectedItems);
-                            manager.addReceipt(receipt);
-                            System.out.println(receipt);
+                        timeSlotManager.markUnavailable(date, start, end); // 標記時段不可預約
+                        System.out.println("\n=== 建立預約後再次查詢可預約時段 ===");
+                        List<TimeSlot> updatedSlots = timeSlotManager.getAvailableSlots(date);
+                        for (TimeSlot s : updatedSlots) {
+                            System.out.println(s);
+                        }
+                                        
+                        AppointmentReceipt receipt = new AppointmentReceipt(
+                        currentUser.getEmail(),date, start, end,selectedItems);
+                        manager.addReceipt(receipt);
+                        System.out.println(receipt);
 
                         } else {
-                                System.out.println("預約失敗：該時段已有預約");
+                            System.out.println("該時段不可預約");
                         }
 
-                         NotificationSystem.NotificationHandler handler = new NotificationSystem.NotificationHandler();
-                            handler.addNotifier(new NotificationSystem.EmailNotifier());
-                            handler.addNotifier(new NotificationSystem.SMSNotifier());
+                    } catch (Exception e) {
+                        System.out.println("預約失敗：" + e.getMessage());
+                    }
+                    break;
 
-                            String message = "親愛的用戶: " + currentUser.getMemberName() + "，您的預約已成功！日期: " + date +
-                                            " 時間: " + start + " - " + end;
-                            handler.notifyAll(currentUser.getEmail(), message);
-
-                            // === 新增提醒功能 ===
-                            NotificationSystem.ReminderService reminderService = new NotificationSystem.ReminderService(handler);
-                            reminderService.scheduleReminder(currentUser.getEmail(), date, start);
-                            
-                            break;
 
                 case 5: // 查看使用者與寵物
                     if (currentUser == null) {
@@ -285,6 +305,8 @@ public class Systemtest {
         scanner.close();
     }
 }
+
+
 
 
 
