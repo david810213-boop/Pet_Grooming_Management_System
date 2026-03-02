@@ -14,7 +14,7 @@ public class TransactionManager {
     public List<Transaction> getTransactionsByUser(String email) {
         List<Transaction> result = new ArrayList<>();
         for (Transaction t : transactions) {
-            if (t.getMemberEmail().equals(email)) {
+            if (t.getUserEmail().equals(email)) {
                 result.add(t);
             }
         }

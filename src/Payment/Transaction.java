@@ -10,9 +10,9 @@ public class Transaction {
     private boolean paid;
     private LocalDateTime paymentTime;
 
-    public Transaction(String appointmentId, String memberEmail, int amount) {
+    public Transaction(String appointmentId, String userEmail, int amount) {
         this.appointmentId = appointmentId;
-        this.memberEmail = memberEmail;
+        this.memberEmail = userEmail;
         this.amount = amount;
         this.paid = false;
     }
@@ -40,7 +40,7 @@ public class Transaction {
         return appointmentId;
     }
 
-    public String getMemberEmail() {
+    public String getUserEmail() {
         return memberEmail;
     }
 

@@ -23,7 +23,7 @@ public class Systemtest {
     private static User currentUser = null; 
     private static AppointmentManager manager = new AppointmentManager();
     private static Payment.TransactionManager transactionManager = new Payment.TransactionManager();
-
+    
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
@@ -186,78 +186,74 @@ public class Systemtest {
                         }
                         break;
                     
-
-
                 case 7: // 結帳
                     if (currentUser == null) {
                         System.out.println("請先登入！");
                         break;
                     }
                     System.out.println("===結帳服務===");
-                    
+
                     List<AppointmentReceipt> userReceipts = manager.getReceiptsByUser(currentUser.getEmail());
                     if (userReceipts.isEmpty()) {
                         System.out.println("沒有可結帳的預約紀錄。");
                         break;
                     }
+
                     int fee = 0;
                     for (AppointmentReceipt r : userReceipts) {
                         fee += r.totalAmount;
                         System.out.println(r);
                     }
-                
-                    // 選擇支付方式
-                        System.out.println("\n請選擇支付方式:");
-                        System.out.println("  1. 現金");
-                        System.out.println("  2. 信用卡");
-                        System.out.print("選擇 (1-2): ");
 
-                        String paymentChoice = scanner.nextLine().trim();
+                    System.out.println("\n請選擇支付方式:");
+                    System.out.println("  1. 現金");
+                    System.out.println("  2. 信用卡");
+                    System.out.print("選擇 (1-2): ");
+                    String paymentChoice = scanner.nextLine().trim();
 
-                        // 驗證支付方式選擇
-                        if (!paymentChoice.equals("1") && !paymentChoice.equals("2")) {
-                            System.out.println("無效的支付方式");
-                            return;
-                        }
+                    if (!paymentChoice.equals("1") && !paymentChoice.equals("2")) {
+                        System.out.println("無效的支付方式");
+                        return;
+                    }
 
-                        PaymentSystem payment = null;
+                    PaymentSystem payment = null;
+                    switch (paymentChoice) {
+                        case "1":
+                            payment = new CashPayment();
+                            break;
+                        case "2":
+                            payment = new CreditCardPayment();
+                            fee = payment.calculateTotal(fee);
+                            System.out.println("  加上手續費後: $" + fee);
+                            break;
+                    }
 
-                        switch (paymentChoice) {
-                            case "1":
-                                payment = new CashPayment();
-                                break;
-                            case "2":
-                                payment = new CreditCardPayment();
-                                fee = payment.calculateTotal(fee); // 信用卡加手續費
-                                System.out.println("  加上手續費後: $" + fee);
-                                break;
-                        }
+                    System.out.print("\n確認支付 $" + fee + "? (y/n): ");
+                    String confirm = scanner.nextLine().trim().toLowerCase();
 
-                        System.out.print("\n確認支付 $" + fee + "? (y/n): ");
-                        String confirm = scanner.nextLine().trim().toLowerCase();
-
-                        if (!confirm.equals("y") && !confirm.equals("yes")) {
+                    if (!confirm.equals("y") && !confirm.equals("yes")) {
                         System.out.println("取消支付");
                         return;
-                        }
-                        boolean paymentSuccess = payment.processPayment(fee);
-                        
-                        System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
+                    }
 
-                        // === 新增交易紀錄 ===
-                        if (paymentSuccess) {
-                            for (AppointmentReceipt r : userReceipts) {
-                                Transaction transaction = new Transaction(
-                                    r.getUserEmail(),
-                                    r.getAppointmentId(),
-                                    r.totalAmount
-                                );
-                                transaction.markPaid();
-                                transactionManager.addTransaction(transaction);
-                            }
-                            System.out.println("交易紀錄已更新！");
+                    boolean paymentSuccess = payment.processPayment(fee);
+                    System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
+
+                    // === 新增交易紀錄 ===
+                    if (paymentSuccess) {
+                        for (AppointmentReceipt r : userReceipts) {
+                            r.markPaid(); // 更新預約紀錄付款狀態
+                            Transaction transaction = new Transaction(
+                                r.getAppointmentId(),
+                                r.getUserEmail(),
+                                r.totalAmount
+                            );
+                            transaction.markPaid();
+                            transactionManager.addTransaction(transaction);
                         }
-                        break;
+                        System.out.println("交易紀錄已更新！");
+                    }
+                    break;
                 
                 case 8: // 查詢交易紀錄
                     if (currentUser == null) {
