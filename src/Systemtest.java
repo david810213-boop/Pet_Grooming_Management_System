@@ -6,6 +6,7 @@ import java.util.Scanner;
 
 import Appointment.AppointmentManager;
 import Appointment.AppointmentReceipt;
+import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
 import Member.User;
@@ -25,7 +26,8 @@ public class Systemtest {
     private static TimeSlotManager timeSlotManager = new TimeSlotManager();
     private static AppointmentManager manager = new AppointmentManager();
     private static Payment.TransactionManager transactionManager = new Payment.TransactionManager();
-    
+    private static GroomingAppointment appointment = null;
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
@@ -122,7 +124,11 @@ public class Systemtest {
                         LocalTime start = LocalTime.parse(scanner.nextLine());
                         System.out.print("結束時間 (HH:mm): ");
                         LocalTime end = LocalTime.parse(scanner.nextLine());
-
+                        System.out.print("請輸入寵物名字: ");
+                        String petName1 = scanner.nextLine().trim();
+                        System.out.print("請輸入寵物種類 (狗/貓/其他): ");
+                        String petType1 = scanner.nextLine().trim();
+                        
                         LocalTime opening = LocalTime.of(11, 0);
                         LocalTime closing = LocalTime.of(19, 30);
 
@@ -155,15 +161,20 @@ public class Systemtest {
                                         System.out.println("無效代碼，請重新輸入！");
                                 }
                         }
+                        appointment = new GroomingAppointment(
+                            "AP001", currentUser.getMemberName(), currentUser.getEmail(), petName1, petType1, selectedItems,
+                            date, start, end
+                        );
                         timeSlotManager.markUnavailable(date, start, end); // 標記時段不可預約
-                        System.out.println("\n=== 建立預約後再次查詢可預約時段 ===");
+                        System.out.println("\n=== 顯示可再預約時段 ===");
                         List<TimeSlot> updatedSlots = timeSlotManager.getAvailableSlots(date);
                         for (TimeSlot s : updatedSlots) {
                             System.out.println(s);
                         }
                                         
                         AppointmentReceipt receipt = new AppointmentReceipt(
-                        currentUser.getEmail(),date, start, end,selectedItems);
+                        currentUser.getEmail(),date, start, end,selectedItems,petName1, petType1
+                        );
                         manager.addReceipt(receipt);
                         System.out.println(receipt);
 

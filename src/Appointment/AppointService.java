@@ -38,7 +38,7 @@ public class AppointService {
     public List<GroomingAppointment> getAppointmentsByOwner(String ownerName) {
         List<GroomingAppointment> result = new ArrayList<>();
         for (GroomingAppointment a : appointments) {
-            if (a.getOwnerName().equals(ownerName)) {
+            if (a.getUserName().equals(ownerName)) {
                 result.add(a);
             }
         }

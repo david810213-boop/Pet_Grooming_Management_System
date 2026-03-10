@@ -61,6 +61,7 @@ public class Systemdemo {
         manager.addTimeSlot(new TimeSlot(LocalDate.of(2026, 1, 25),
                 LocalTime.of(14, 0), LocalTime.of(16, 0), true));
 
+
         // 標記某個時段不可預約
         manager.markUnavailable(LocalDate.of(2026, 1, 25),
                 LocalTime.of(12, 0), LocalTime.of(14, 0));
@@ -71,18 +72,17 @@ public class Systemdemo {
             System.out.println(slot);
         }
 
-        //建立預約服務
-        GroomingAppointment appointment = new GroomingAppointment(
-            "AP001","alice@example.com","Alice","Lucky",
-            LocalDate.of(2026, 2, 25),
-            LocalTime.of(11, 0),
-            LocalTime.of(12, 0)
-        );
-
         // 選擇的美容項目
         List<Item> selectedServices = new ArrayList<>();
         selectedServices.add(Item.GS001);
         selectedServices.add(Item.GS004);
+        //建立預約服務
+        GroomingAppointment appointment = new GroomingAppointment(
+            "AP001","Alice","alice@example.com","Lucky","Dog", selectedServices,
+            LocalDate.of(2026, 2, 25),
+            LocalTime.of(11, 0),
+            LocalTime.of(12, 0)
+        );
     
         // 計算總金額
         int totalAmount = 0;
@@ -99,7 +99,9 @@ public class Systemdemo {
             appointment.getDate(),
             appointment.getStartTime(),
             appointment.getEndTime(),
-            selectedServices
+            selectedServices,
+            appointment.getPetName(),
+            appointment.getPetType()
         );
             
 
@@ -110,11 +112,11 @@ public class Systemdemo {
             handler.addNotifier(new NotificationSystem.EmailNotifier());
             handler.addNotifier(new NotificationSystem.SMSNotifier());
 
-            String message = "親愛的用戶: " + appointment.getOwnerName() + "，您已預約成功！ 寵物: " + appointment.getPetName() +
+            String message = "親愛的用戶: " + appointment.getUserName() + "，您已預約成功！ 寵物: " + appointment.getPetName() +
                             " 日期: " + appointment.getDate() +
                             " 時間: " + appointment.getStartTime() + " - " + appointment.getEndTime();
-            handler.notifyAll(appointment.getOwnerName(), message);
-            reminderService.scheduleReminder(appointment.getOwnerName(), appointment.getDate(), appointment.getStartTime());
+            handler.notifyAll(appointment.getUserName(), message);
+            reminderService.scheduleReminder(appointment.getUserName(), appointment.getDate(), appointment.getStartTime());
             
         // 查詢預約紀錄
         
