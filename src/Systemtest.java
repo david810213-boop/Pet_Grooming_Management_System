@@ -10,6 +10,7 @@ import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
 import Member.User;
+import Member.UserRole;
 import Member.UserService;
 import Payment.CashPayment;
 import Payment.CreditCardPayment;
@@ -34,33 +35,105 @@ public class Systemtest {
 
         while (running) {
             System.out.println("\n=== 歡迎使用寵物美容服務系統 ===");
-            System.out.println("1. 註冊使用者");
-            System.out.println("2. 登入");
-            System.out.println("3. 新增寵物");
-            System.out.println("4. 預約服務");
-            System.out.println("5. 查看使用者與寵物");
-            System.out.println("6. 查詢預約紀錄");
-            System.out.println("7. 結帳服務");
-            System.out.println("8. 查詢交易紀錄");
-            System.out.println("0. 離開");
-            System.out.print("請選擇功能: ");
             
-            int choice = Integer.parseInt(scanner.nextLine());
+            // 1. 根據角色顯示對應選單
+            if (currentUser == null) {
+                showGuestMenu();
+            } else {
+                switch (currentUser.getRole()) {
+                    case ADMIN -> showAdminMenu();
+                    case STAFF -> showStaffMenu();
+                    case CUSTOMER -> showCustomerMenu();
+                }
+            }
 
-            switch (choice) {
-                case 1: // 註冊
+            // 2. 讀取輸入
+            System.out.print("請選擇功能: ");
+            String input = scanner.nextLine();
+            int choice;
+            try {
+                choice = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("請輸入數字！");
+                continue;
+            }
+
+            // 3. 處理功能邏輯
+            if (currentUser == null) {
+                // 未登入時的邏輯
+                if (choice == 1) registerUser(scanner);
+                else if (choice == 2) loginUser(scanner);
+                else if (choice == 3) running = false;
+                else System.out.println("無效選項");
+            } else {
+                // 已登入後的邏輯切換
+                processAuthenticatedChoice(choice, scanner);
+                if (choice == 0) currentUser = null; // 假設 0 是登出
+            }
+        }
+        System.out.println("系統已退出，再見！");
+        scanner.close();
+    }
+
+    // === 選單顯示區域 ===
+    private static void showGuestMenu() {
+        System.out.println("1. 註冊 / 2. 登入 / 3. 離開系統");
+    }
+
+    private static void showCustomerMenu() {
+        System.out.println("--- 顧客模式 (" + currentUser.getMemberName() + ") ---");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約 / 0. 登出");
+    }
+
+    private static void showAdminMenu() {
+        System.out.println("--- 管理者模式 ---");
+        System.out.println("5. 查看所有用戶 / 7. 結帳服務 / 8. 查詢所有交易 / 0. 登出");
+    }
+
+    private static void showStaffMenu() {
+        System.out.println("--- 員工模式 ---");
+        System.out.println("4. 預約服務 / 6. 查詢預約 / 7. 結帳服務 / 0. 登出");
+    }
+
+    // === 邏輯分發區域 ===
+
+    private static void processAuthenticatedChoice(int choice, Scanner scanner) {
+        switch (choice) {
+            case 3 -> handlepet(scanner);
+            case 4 -> bookAppointment(scanner);
+            case 5 -> viewUserAndPets(scanner); // 管理者功能
+            case 6 -> viewAppointments(scanner);
+            case 7 -> processPayment(scanner); // 員工/管理者功能
+            case 8 -> queryTransactions(scanner);
+            case 0 -> logout();
+            default -> System.out.println("無效選項");
+        }
+    }
+    //=== 各功能實作區域 ===
+                private static void registerUser(Scanner scanner) {
+                    System.out.println("=== 註冊使用者 ===");
                     System.out.print("姓名: ");
                     String name = scanner.nextLine();
                     System.out.print("密碼: ");
                     String password = scanner.nextLine();
                     System.out.print("Email: ");
                     String email = scanner.nextLine();
-
-                    User user = new User(name, password, email);
-                    System.out.println(userService.register(user));
-                    break;
-
-                case 2: // 登入
+                    System.out.print("角色 (ADMIN/STAFF/CUSTOMER): ");
+                    String roleInput = scanner.nextLine().trim().toUpperCase();
+                    UserRole role;
+                    try {
+                        role = UserRole.valueOf(roleInput);
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("無效的角色，預設為 CUSTOMER");
+                        role = UserRole.CUSTOMER;
+                    }
+                    User newUser = new User(name, password, email, role);
+                    String result = userService.register(newUser);
+                    System.out.println(result);
+                }
+                // 登入
+                private static void loginUser(Scanner scanner) {
+                    System.out.println("=== 使用者登入 ===");
                     System.out.print("Email: ");
                     String loginEmail = scanner.nextLine();
                     System.out.print("密碼: ");
@@ -72,12 +145,13 @@ public class Systemtest {
                     } else {
                         System.out.println("登入失敗：帳號或密碼錯誤");
                     }
-                    break;
-
-                case 3: // 新增寵物
+                    return;
+                }
+                // 新增寵物
+                private static void handlepet(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
                     System.out.print("寵物名字: ");
                     String petName = scanner.nextLine();
@@ -93,12 +167,13 @@ public class Systemtest {
                     Pet pet = new Pet(petName, petType, breed, weight, age);
                     currentUser.addPet(pet);
                     System.out.println(userService.addPetToUser(currentUser.getEmail(), pet));
-                    break;
-
-                case 4: // 預約服務
-                    if (currentUser == null) {
+                    return;
+                }
+                // 預約服務
+                private static void bookAppointment(Scanner scanner) {    
+                if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
                         System.out.println("=== 預約服務 ===");
                         System.out.println("營業時間: 11:00 - 19:30");
@@ -185,23 +260,22 @@ public class Systemtest {
                     } catch (Exception e) {
                         System.out.println("預約失敗：" + e.getMessage());
                     }
-                    break;
-
-
-                case 5: // 查看使用者與寵物
+                    return;
+                }
+                // 管理者查看所有使用者及其寵物
+                private static void viewUserAndPets(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
                     System.out.println("===使用者資訊===");
                     System.out.println(userService);
-            
-                    break;
-
-                case 6://查看預約紀錄
+                }
+                // 查詢預約紀錄
+                private static void viewAppointments(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
                     System.out.print("請輸入要查詢的 Email: ");
                     String queryEmail = scanner.nextLine();
@@ -215,19 +289,20 @@ public class Systemtest {
                                 System.out.println(r);
                             }
                         }
-                        break;
-                    
-                case 7: // 結帳
+                        return;
+                    }
+                // 結帳服務
+                private static void processPayment(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
                     System.out.println("===結帳服務===");
 
                     List<AppointmentReceipt> userReceipts = manager.getReceiptsByUser(currentUser.getEmail());
                     if (userReceipts.isEmpty()) {
                         System.out.println("沒有可結帳的預約紀錄。");
-                        break;
+                        return;
                     }
 
                     int fee = 0;
@@ -284,14 +359,15 @@ public class Systemtest {
                         }
                         System.out.println("交易紀錄已更新！");
                     }
-                    break;
-                
-                case 8: // 查詢交易紀錄
+                    return;
+                }
+                // 查詢交易紀錄
+                private static void queryTransactions(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
-                        break;
+                        return;
                     }
-
+                    
                     List<Transaction> userTransactions = transactionManager.getTransactionsByUser(currentUser.getEmail());
                     if (userTransactions.isEmpty()) {
                         System.out.println("您沒有任何交易紀錄。");
@@ -301,21 +377,21 @@ public class Systemtest {
                             System.out.println(t);
                         }
                     }
-                    break;
-
-                case 0: // 離開
-                    running = false;
-                    System.out.println("系統已退出，再見！");
-                    break;
-
-                default:
-                    System.out.println("無效選項，請重新輸入。");
-            }
-        }
-
-        scanner.close();
-    }
+                    return;
+                }
+                // 登出
+                private static void logout() {
+                    currentUser = null;
+                    System.out.println("已成功登出！");
+                    return;
+                }
 }
+
+
+               
+        
+
+        
 
 
 
