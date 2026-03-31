@@ -10,6 +10,7 @@ import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
 import Member.User;
+import Member.UserRole;
 import Member.UserService;
 import PetManagement.Pet;
 import Service.GrommingItemCode.Item;
@@ -27,9 +28,9 @@ public class Systemdemo {
     public static void main(String[] args) {
         UserService userService = new UserService();
 
-        User user1 = new User("Alice", "1234", "alice@example.com");
-        User user2 = new User("Bob", "5678", "bob@example.com");
-        User user3 = new User("Alice", "9999", "alice@example.com"); // 重複 email
+        User user1 = new User("Alice", "1234", "alice@example.com", UserRole.CUSTOMER);
+        User user2 = new User("Bob", "5678", "bob@example.com", UserRole.CUSTOMER);
+        User user3 = new User("Alice", "9999", "alice@example.com", UserRole.CUSTOMER); // 重複 email
 
         System.out.println(userService.register(user1)); // 註冊成功
         System.out.println(userService.register(user2)); // 註冊成功

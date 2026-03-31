@@ -82,17 +82,17 @@ public class Systemtest {
 
     private static void showCustomerMenu() {
         System.out.println("--- 顧客模式 (" + currentUser.getMemberName() + ") ---");
-        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約 / 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 0. 登出");
     }
 
     private static void showAdminMenu() {
         System.out.println("--- 管理者模式 ---");
-        System.out.println("5. 查看所有用戶 / 7. 結帳服務 / 8. 查詢所有交易 / 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 0. 登出");
     }
 
     private static void showStaffMenu() {
         System.out.println("--- 員工模式 ---");
-        System.out.println("4. 預約服務 / 6. 查詢預約 / 7. 結帳服務 / 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 7. 結帳服務 / 0. 登出");
     }
 
     // === 邏輯分發區域 ===
@@ -262,7 +262,7 @@ public class Systemtest {
                     }
                     return;
                 }
-                // 管理者查看所有使用者及其寵物
+                // 查看所有使用者及其寵物
                 private static void viewUserAndPets(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
