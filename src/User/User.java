@@ -1,4 +1,4 @@
-package Member;
+package User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,16 +39,8 @@ public class User {
 
     // 添加寵物
     public void addPet(Pet pet) {
-    for (Pet p : pets) {
-        // 確保不重複添加同一隻寵物（可根據名稱、類型、品種等屬性判斷）
-        if (p.getName().equals(pet.getName()) &&    
-            p.getPetType().equals(pet.getPetType()) &&
-            p.getBreed().equals(pet.getBreed())) {
-            return; 
-        }
+        this.pets.add(pet);
     }
-    pets.add(pet);
-}
 
     // 取得所有寵物
     public List<Pet> getPets() {

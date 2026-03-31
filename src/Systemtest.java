@@ -9,15 +9,15 @@ import Appointment.AppointmentReceipt;
 import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
-import Member.User;
-import Member.UserRole;
-import Member.UserService;
 import Payment.CashPayment;
 import Payment.CreditCardPayment;
 import Payment.PaymentSystem;
 import Payment.Transaction;
 import PetManagement.Pet;
 import Service.GrommingItemCode;
+import User.User;
+import User.UserRole;
+import User.UserService;
 
 
 
@@ -109,7 +109,7 @@ public class Systemtest {
             default -> System.out.println("無效選項");
         }
     }
-    //=== 各功能實作區域 ===
+                //=== 各功能實作區域 ===
                 private static void registerUser(Scanner scanner) {
                     System.out.println("=== 註冊使用者 ===");
                     System.out.print("姓名: ");
@@ -118,19 +118,14 @@ public class Systemtest {
                     String password = scanner.nextLine();
                     System.out.print("Email: ");
                     String email = scanner.nextLine();
-                    System.out.print("角色 (ADMIN/STAFF/CUSTOMER): ");
-                    String roleInput = scanner.nextLine().trim().toUpperCase();
-                    UserRole role;
-                    try {
-                        role = UserRole.valueOf(roleInput);
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("無效的角色，預設為 CUSTOMER");
-                        role = UserRole.CUSTOMER;
-                    }
-                    User newUser = new User(name, password, email, role);
-                    String result = userService.register(newUser);
+
+                    // 直接給 CUSTOMER 權限
+                    User newUser = new User(name, password, email, UserRole.CUSTOMER); 
+                    
+                    String result = userService.register(newUser); 
                     System.out.println(result);
                 }
+                
                 // 登入
                 private static void loginUser(Scanner scanner) {
                     System.out.println("=== 使用者登入 ===");
@@ -145,7 +140,6 @@ public class Systemtest {
                     } else {
                         System.out.println("登入失敗：帳號或密碼錯誤");
                     }
-                    return;
                 }
                 // 新增寵物
                 private static void handlepet(Scanner scanner) {
@@ -164,10 +158,9 @@ public class Systemtest {
                     System.out.print("年齡: ");
                     int age = Integer.parseInt(scanner.nextLine());
 
-                    Pet pet = new Pet(petName, petType, breed, weight, age);
-                    currentUser.addPet(pet);
-                    System.out.println(userService.addPetToUser(currentUser.getEmail(), pet));
-                    return;
+                    Pet newPet = new Pet(petName, petType, breed, weight, age);
+                    currentUser.addPet(newPet);
+                    System.out.println(userService.addPetToUser(currentUser.getEmail(), newPet));
                 }
                 // 預約服務
                 private static void bookAppointment(Scanner scanner) {    
@@ -260,7 +253,6 @@ public class Systemtest {
                     } catch (Exception e) {
                         System.out.println("預約失敗：" + e.getMessage());
                     }
-                    return;
                 }
                 // 查看所有使用者及其寵物
                 private static void viewUserAndPets(Scanner scanner) {
@@ -289,7 +281,6 @@ public class Systemtest {
                                 System.out.println(r);
                             }
                         }
-                        return;
                     }
                 // 結帳服務
                 private static void processPayment(Scanner scanner) {

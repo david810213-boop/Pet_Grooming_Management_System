@@ -1,4 +1,4 @@
-package Member;
+package User;
 
 public enum UserRole {
     ADMIN("管理者"),
