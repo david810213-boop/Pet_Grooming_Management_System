@@ -1,5 +1,5 @@
 package Payment;
 
 public interface PaymentVerification {
-    boolean verifyPaymentDetails(String membername, int amount);
+    boolean verifyPaymentDetails(String memberName, int amount);
 }

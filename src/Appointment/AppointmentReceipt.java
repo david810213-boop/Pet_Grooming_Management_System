@@ -62,6 +62,9 @@ public class AppointmentReceipt {
 
     // Setter
     public void markPaid() { this.paid = true; }
+    
+
+    public void setPaid(boolean paid) {this.paid = paid;}
 
     @Override
     public String toString() {

@@ -11,6 +11,7 @@ import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
 import Payment.CashPayment;
 import Payment.CreditCardPayment;
+import Payment.PaymentHandler;
 import Payment.PaymentSystem;
 import Payment.Transaction;
 import PetManagement.Pet;
@@ -81,18 +82,18 @@ public class Systemtest {
     }
 
     private static void showCustomerMenu() {
-        System.out.println("--- 顧客模式 (" + currentUser.getMemberName() + ") ---");
-        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 0. 登出");
+        System.out.println("--- 歡迎使用本服務系統！ (" + currentUser.getName() + ") ---");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢交易紀錄 / 10. 查看我的寵物 / 0. 登出");
     }
 
     private static void showAdminMenu() {
         System.out.println("--- 管理者模式 ---");
-        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 9. 查看所有預約 / 11. 產生財務報告 / 12. 新增管理員工 0. 登出");
     }
 
     private static void showStaffMenu() {
         System.out.println("--- 員工模式 ---");
-        System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 7. 結帳服務 / 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 9. 查看所有預約 / 0. 登出");
     }
 
     // === 邏輯分發區域 ===
@@ -105,6 +106,10 @@ public class Systemtest {
             case 6 -> viewAppointments(scanner);
             case 7 -> processPayment(scanner); // 員工/管理者功能
             case 8 -> queryTransactions(scanner);
+            case 9 -> viewAllAppointments(scanner); // 管理者功能
+            case 10 -> viewMyPets(scanner); // 顧客功能
+            case 11 -> generateFinancialReport(scanner); // 管理者功能
+            case 12 -> adminCreateAccount(scanner); // 管理者功能
             case 0 -> logout();
             default -> System.out.println("無效選項");
         }
@@ -136,7 +141,7 @@ public class Systemtest {
 
                     currentUser = userService.login(loginEmail, loginPassword);
                     if (currentUser != null) {
-                        System.out.println("登入成功 ! " + currentUser.getMemberName());
+                        System.out.println("登入成功 ! " + currentUser.getName());
                     } else {
                         System.out.println("登入失敗：帳號或密碼錯誤");
                     }
@@ -159,7 +164,6 @@ public class Systemtest {
                     int age = Integer.parseInt(scanner.nextLine());
 
                     Pet newPet = new Pet(petName, petType, breed, weight, age);
-                    currentUser.addPet(newPet);
                     System.out.println(userService.addPetToUser(currentUser.getEmail(), newPet));
                 }
                 // 預約服務
@@ -230,7 +234,7 @@ public class Systemtest {
                                 }
                         }
                         appointment = new GroomingAppointment(
-                            "AP001", currentUser.getMemberName(), currentUser.getEmail(), petName1, petType1, selectedItems,
+                            "AP001", currentUser.getName(), currentUser.getEmail(), petName1, petType1, selectedItems,
                             date, start, end
                         );
                         timeSlotManager.markUnavailable(date, start, end); // 標記時段不可預約
@@ -288,71 +292,96 @@ public class Systemtest {
                         System.out.println("請先登入！");
                         return;
                     }
-                    System.out.println("===結帳服務===");
 
-                    List<AppointmentReceipt> userReceipts = manager.getReceiptsByUser(currentUser.getEmail());
-                    if (userReceipts.isEmpty()) {
-                        System.out.println("沒有可結帳的預約紀錄。");
-                        return;
+                    String targetEmail;
+                    // 1. 根據角色決定先「要結誰的帳」
+                    if (currentUser.getRole() == UserRole.CUSTOMER) {
+                        targetEmail = currentUser.getEmail();
+                        System.out.println("--- 您的待結帳清單 ---");
+                    } else {
+                        System.out.println("--- 店鋪結帳系統 ---");
+                        System.out.print("請輸入欲結帳的會員 Email: ");
+                        targetEmail = scanner.nextLine();
                     }
 
-                    int fee = 0;
-                    for (AppointmentReceipt r : userReceipts) {
-                        fee += r.totalAmount;
-                        System.out.println(r);
-                    }
-
-                    System.out.println("\n請選擇支付方式:");
-                    System.out.println("  1. 現金");
-                    System.out.println("  2. 信用卡");
-                    System.out.print("選擇 (1-2): ");
-                    String paymentChoice = scanner.nextLine().trim();
-
-                    if (!paymentChoice.equals("1") && !paymentChoice.equals("2")) {
-                        System.out.println("無效的支付方式");
-                        return;
-                    }
-
-                    PaymentSystem payment = null;
-                    switch (paymentChoice) {
-                        case "1":
-                            payment = new CashPayment();
-                            break;
-                        case "2":
-                            payment = new CreditCardPayment();
-                            fee = payment.calculateTotal(fee);
-                            System.out.println("  加上手續費後: $" + fee);
-                            break;
-                    }
-
-                    System.out.print("\n確認支付 $" + fee + "? (y/n): ");
-                    String confirm = scanner.nextLine().trim().toLowerCase();
-
-                    if (!confirm.equals("y") && !confirm.equals("yes")) {
-                        System.out.println("取消支付");
-                        return;
-                    }
-
-                    boolean paymentSuccess = payment.processPayment(fee);
-                    System.out.println("支付結果: " + (paymentSuccess ? "支付成功" : "支付失敗"));
-
-                    // === 新增交易紀錄 ===
-                    if (paymentSuccess) {
-                        for (AppointmentReceipt r : userReceipts) {
-                            r.markPaid(); // 更新預約紀錄付款狀態
-                            Transaction transaction = new Transaction(
-                                r.getAppointmentId(),
-                                r.getUserEmail(),
-                                r.totalAmount
-                            );
-                            transaction.markPaid();
-                            transactionManager.addTransaction(transaction);
+                    // 2. 搜尋該 Email 尚未付款的預約單
+                    List<AppointmentReceipt> receipts = manager.getReceiptsByUser(targetEmail);
+                    List<AppointmentReceipt> unpaidReceipts = new ArrayList<>();
+                    for (AppointmentReceipt r : receipts) {
+                        if (!r.isPaid()) {
+                            unpaidReceipts.add(r);
                         }
-                        System.out.println("交易紀錄已更新！");
                     }
-                    return;
+
+                    if (unpaidReceipts.isEmpty()) {
+                        System.out.println("目前沒有待付款的預約紀錄。");
+                        return;
+                    }
+
+                    // 3. 列出待付款清單供選擇
+                    for (int i = 0; i < unpaidReceipts.size(); i++) {
+                        System.out.println((i + 1) + ". " + unpaidReceipts.get(i));
+                    }
+
+                    System.out.print("請選擇要結帳的單號 (輸入數字，按 0 取消): ");
+                    int choice = scanner.nextInt();
+                    scanner.nextLine(); // 吃掉換行符
+
+                    if (choice > 0 && choice <= unpaidReceipts.size()) {
+                        AppointmentReceipt selected = unpaidReceipts.get(choice - 1);
+
+                        // --- 優化後的新流程：選擇支付方式 ---
+                        System.out.println("\n請選擇支付方式: (1) 現金 (2) 信用卡");
+                        System.out.print("您的選擇: ");
+                        int payType = scanner.nextInt();
+                        scanner.nextLine();
+
+                        // 建立處理器與支付物件
+                        PaymentHandler handler = new PaymentHandler();
+                        PaymentSystem selectedMethod = (payType == 1) ? new CashPayment() : new CreditCardPayment();
+
+                        // 4. 驗證、計算總額、印出收據
+                        boolean success = handler.handleProcess(
+                            selectedMethod, 
+                            selected.getAppointmentId(), 
+                            currentUser.getName(), 
+                            selected.getTotalAmount()
+                        );
+
+                        // 5. 若支付成功，更新系統狀態並存檔
+                        if (success) {
+                            // 獲取包含手續費後的最終金額
+                            int finalPrice = selectedMethod.calculateTotal(selected.getTotalAmount());
+
+                            // 建立交易紀錄物件
+                            Transaction transaction = new Transaction(
+                                selected.getAppointmentId(),
+                                selected.getUserEmail(),
+                                finalPrice
+                            );
+
+                            // 標記經手人
+                            String staffInfo = (currentUser.getRole() == UserRole.CUSTOMER) 
+                                            ? "會員自助(" + currentUser.getName() + ")" 
+                                            : "員工:" + currentUser.getName();
+                            
+                            transaction.markPaid(staffInfo);
+
+                            // 更新預約單與交易管理器狀態
+                            selected.setPaid(true); 
+                            transactionManager.addTransaction(transaction);
+
+                            System.out.println("✅ 結帳成功！狀態已同步至系統。");
+                        } else {
+                            System.out.println("❌ 支付失敗，交易已取消。");
+                        }
+
+                    } else {
+                        System.out.println("取消結帳。");
+                    }
                 }
-                // 查詢交易紀錄
+
+                 // 查詢交易紀錄
                 private static void queryTransactions(Scanner scanner) {
                     if (currentUser == null) {
                         System.out.println("請先登入！");
@@ -369,6 +398,133 @@ public class Systemtest {
                         }
                     }
                     return;
+                }
+
+                // 管理者查看所有預約紀錄
+                private static void viewAllAppointments(Scanner scanner) {
+                    // 1. 權限檢查（確保只有管理員或員工能看）
+                    if (currentUser == null || currentUser.getRole() == UserRole.CUSTOMER) {
+                        System.out.println("【權限不足】只有管理員或員工可以查看所有預約。");
+                        return;
+                    }
+
+                    System.out.println("\n=== 系統所有預約紀錄 ===");
+                    List<AppointmentReceipt> all = manager.getAllReceipts();
+
+                    if (all.isEmpty()) {
+                        System.out.println("目前系統中沒有任何預約紀錄。");
+                    } else {
+                        // 按照順序印出每一筆預約
+                        for (int i = 0; i < all.size(); i++) {
+                            System.out.println((i + 1) + ". " + all.get(i));
+                        }
+                        System.out.println("總計共 " + all.size() + " 筆預約。");
+                    }
+                }
+                //查看我的寵物清單
+                private static void viewMyPets(Scanner scanner) {
+                    // 1. 安全檢查：確保使用者已登入
+                    if (currentUser == null) {
+                        System.out.println("請先登入系統才能查看寵物清單！");
+                        return;
+                    }
+
+                    System.out.println("\n========================================");
+                    System.out.println("   🐾 " + currentUser.getName() + " 的寵物清單 🐾");
+                    System.out.println("========================================");
+
+                    // 2. 透過 UserService 取得該 Email 對應的寵物清單
+                    // 在UserService 中回傳 usersMap.get(email).getPets()
+                    List<Pet> pets = userService.getPetsByEmail(currentUser.getEmail());
+
+                    // 3. 檢查清單是否為空
+                    if (pets == null || pets.isEmpty()) {
+                        System.out.println(" 您目前尚未登記任何寵物。");
+                        System.out.println(" 提示：請選擇選單中的「新增寵物」功能來建立資料。");
+                    } else {
+                        // 4. 迴圈遍歷並格式化印出每一隻寵物
+                        for (int i = 0; i < pets.size(); i++) {
+                            Pet p = pets.get(i);
+                            // 假設 Pet 類別有提供基本資訊的 getter 或 toString
+                            System.out.println(pets.get(i).toString());
+                        }
+                        System.out.println("----------------------------------------");
+                        System.out.println(" 總計：共 " + pets.size() + " 隻寵物");
+                    }
+                    System.out.println("========================================\n");
+                }
+
+                // 管理者生成財務報表
+                private static void generateFinancialReport(Scanner scanner) {
+                    // 1. 權限檢查：只有 ADMIN 角色可以查看
+                    if (currentUser == null || currentUser.getRole() != UserRole.ADMIN) {
+                        System.out.println("【系統訊息】權限不足，僅限管理員查看財務報表。");
+                        return;
+                    }
+
+                    System.out.println("\n==========================================================================");
+                    System.out.println("                📊 寵物美容服務系統 - 年度/月度 財務報表 📊");
+                    System.out.println("==========================================================================");
+                    System.out.println("報表產出時間: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    System.out.println("--------------------------------------------------------------------------");
+
+                    // 2. 從 TransactionManager 取得所有資料
+                    List<Transaction> allTransactions = transactionManager.getAllTransactions();
+
+                    if (allTransactions.isEmpty()) {
+                        System.out.println(" [訊息] 目前尚無任何交易紀錄。");
+                    } else {
+                        // 印出明細表頭
+                        System.out.printf("%-10s | %-20s | %-8s | %-6s | %-15s%n", 
+                                        "預約編號", "會員 Email", "金額", "狀態", "支付時間");
+                        System.out.println("--------------------------------------------------------------------------");
+
+                        int paidCount = 0;
+                        for (Transaction t : allTransactions) {
+                            String timeStr = (t.getPaymentTime() != null) 
+                                            ? t.getPaymentTime().format(java.time.format.DateTimeFormatter.ofPattern("MM-dd HH:mm")) 
+                                            : "    -    ";
+                            
+                            System.out.printf("%-12s | %-20s | $%7d | %-6s | %-15s%n", 
+                                            t.getAppointmentId(), 
+                                            t.getMemberEmail(), 
+                                            t.getAmount(), 
+                                            t.isPaid() ? "已付" : "未付", 
+                                            timeStr);
+                            
+                            if (t.isPaid()) paidCount++;
+                        }
+
+                        // 3. 數據統計
+                        double totalRevenue = transactionManager.calculateTotalRevenue();
+                        double average = (paidCount > 0) ? totalRevenue / paidCount : 0;
+
+                        System.out.println("--------------------------------------------------------------------------");
+                        System.out.printf(" 📈 統計總結： %n");
+                        System.out.printf("    ▶ 總成交筆數： %d 筆 %n", paidCount);
+                        System.out.printf("    ▶ 總累積營收： NT$ %,.0f %n", totalRevenue);
+                        System.out.printf("    ▶ 平均客單價： NT$ %,.0f %n", average);
+                    }
+                    System.out.println("==========================================================================\n");
+                }
+
+                // 管理者新增員工帳號
+                private static void adminCreateAccount(Scanner scanner) {
+                    // 這裡可以複用註冊邏輯，但允許輸入角色
+                    System.out.println("=== [管理員專區] 建立內部帳號 ===");
+                    // ... 輸入姓名、密碼、Email ...
+                    System.out.print("姓名: ");
+                    String name = scanner.nextLine();
+                    System.out.print("密碼: ");
+                    String password = scanner.nextLine();
+                    System.out.print("Email: ");
+                    String email = scanner.nextLine();
+                    System.out.print("指派角色 (ADMIN/STAFF): ");
+                    String roleInput = scanner.nextLine().trim().toUpperCase();
+                    
+                    // 驗證邏輯...
+                    User internalUser = new User(name, password, email, UserRole.valueOf(roleInput));
+                    userService.register(internalUser);
                 }
                 // 登出
                 private static void logout() {

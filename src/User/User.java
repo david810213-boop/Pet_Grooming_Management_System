@@ -6,7 +6,7 @@ import java.util.List;
 import PetManagement.Pet;
 
 public class User {
-    private String memberName;
+    private String name;
     private String birthday;
     private String email;
     private String phone;
@@ -16,21 +16,21 @@ public class User {
     private List<Pet>pets = new ArrayList<>(); // 使用者的寵物清單
 
     
-    public User (String memberName,String password,String email,UserRole role) {
-        this.memberName = memberName;
+    public User (String name,String password,String email,UserRole role) {
+        this.name = name;
         this.password = password;
         this.email = email;
         this.role = role;
     }
 
-    public void setName(String memberName) {this.memberName = memberName;}
+    public void setName(String name) {this.name = name;}
     public void setBirthday(String birthday) {this.birthday = birthday;}
     public void setEmail(String email) {this.email = email;}
     public void setPhone(String phone) {this.phone = phone;}
     public String getPassword() {return password;}
     public void setPassword(String password) {this.password = password;}
 
-    public String getMemberName() {return memberName;}
+    public String getName() {return name;}
     public String getBirthday() {return birthday;}
     public String getEmail() {return email;}
     public String getPhone() {return phone;}
@@ -50,7 +50,7 @@ public class User {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("使用者: ").append(memberName)
+        sb.append("使用者: ").append(name)
           .append(" | Email: ").append(email)
           .append("\n寵物清單:\n");
 

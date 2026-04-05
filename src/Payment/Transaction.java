@@ -9,17 +9,20 @@ public class Transaction {
     private int amount;
     private boolean paid;
     private LocalDateTime paymentTime;
+    private String staffName; // 新增：儲存結帳人員姓名
 
-    public Transaction(String appointmentId, String userEmail, int amount) {
+    public Transaction(String appointmentId, String memberEmail, int amount) {
         this.appointmentId = appointmentId;
-        this.memberEmail = userEmail;
+        this.memberEmail = memberEmail;
         this.amount = amount;
         this.paid = false;
+        this.staffName = "待處理"; 
     }
 
-    public void markPaid() {
+    public void markPaid(String staffName) {
         this.paid = true;
         this.paymentTime = LocalDateTime.now();
+        this.staffName = staffName;
     }
 
     public boolean isPaid() {
@@ -29,10 +32,8 @@ public class Transaction {
     @Override
     public String toString() {
         return String.format(
-            "訂單編號: %s | 會員: %s | 金額: %d | 狀態: %s | 支付時間: %s",
-            appointmentId, memberEmail, amount,
-            paid ? "已付款" : "未付款",
-            paid ? paymentTime : "-"
+            "[%s] 訂單:%s | 會員:%s | 金額:%d | 經手人:%s",
+            paid ? "已支付" : "未支付", appointmentId, memberEmail, amount, staffName
         );
     }
 
@@ -40,7 +41,7 @@ public class Transaction {
         return appointmentId;
     }
 
-    public String getUserEmail() {
+    public String getMemberEmail() {
         return memberEmail;
     }
 
@@ -52,5 +53,10 @@ public class Transaction {
         return paymentTime;
     }
 
+    public String getStaffName() {
+        return staffName;
+    }
     
+
 }
+

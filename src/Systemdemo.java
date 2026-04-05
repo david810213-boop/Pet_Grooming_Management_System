@@ -38,7 +38,7 @@ public class Systemdemo {
 
         // 查看所有使用者
         for (User u : userService.getAllUsers()) {
-            System.out.println(u.getMemberName() + " - " + u.getEmail());
+            System.out.println(u.getName() + " - " + u.getEmail());
         }
         // 新增寵物到使用者
         Pet pet1 = new Pet("Lucky", "Dog", "Labrador", 15, 4);
@@ -149,7 +149,7 @@ public class Systemdemo {
                     r.getUserEmail(),
                     r.totalAmount
                 );
-                transaction.markPaid(); // 更新交易紀錄付款狀態
+                transaction.markPaid("John Doe"); // 更新交易紀錄付款狀態
                 transactionManager.addTransaction(transaction);
             }
             System.out.println("交易紀錄已更新！");

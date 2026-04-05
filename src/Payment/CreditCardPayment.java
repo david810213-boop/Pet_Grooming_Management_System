@@ -2,45 +2,32 @@ package Payment;
 
 import java.time.LocalDateTime;
 
-public class CreditCardPayment implements PaymentSystem,PaymentVerification{
-    private static final double PROCESSING_FEE = 0.02; // 2%手續費
+public class CreditCardPayment implements PaymentSystem, PaymentVerification {
+    private static final double PROCESSING_FEE_RATE = 0.02;
 
     @Override
     public boolean processPayment(int amount) {
-        System.out.println("處理信用卡支付: " + amount + "元");
-        // 實際信用卡處理邏輯
-        return validateAndProcessCreditCard(amount);
+        System.out.println("信用卡授權中... 金額: " + amount + "元");
+        return true; // 模擬授權成功
     }
 
     @Override
     public int calculateTotal(int baseAmount) {
-        // 加上信用卡手續費
-        return (int) (baseAmount * (1 + PROCESSING_FEE));
+        return (int) (baseAmount * (1 + PROCESSING_FEE_RATE));
     }
 
     @Override
-    public String generateReceipt(String appointmentId,String memberName, int amount) {
+    public String generateReceipt(String appointmentId, String memberName, int amount) {
+        int fee = (int) (amount / (1 + PROCESSING_FEE_RATE) * PROCESSING_FEE_RATE);
         return String.format("""
-            ===== 本次消費收據 =====
+            ===== 本次消費收據 (信用卡) =====
             預約編號: %s
             姓名: %s
-            支付方式: 信用卡
-            原始金額: %d元
             手續費(2%%): %d元
-            總金額: %d元
+            支付總額: %d元
             日期時間: %s
-            ===================
-            """,appointmentId,
-            memberName,
-            amount,
-            (int)(amount * PROCESSING_FEE),
-            (int)(amount * (1 + PROCESSING_FEE))
-            ,LocalDateTime.now());
-    }
-
-    private boolean validateAndProcessCreditCard(int amount) {
-        // 模擬信用卡驗證和處理
-        return true;
+            ==========================
+            """, appointmentId, memberName, fee, amount, LocalDateTime.now());
     }
 
     @Override
