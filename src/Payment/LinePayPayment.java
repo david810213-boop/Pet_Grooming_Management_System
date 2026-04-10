@@ -7,10 +7,10 @@ public class LinePayPayment implements PaymentSystem, PaymentVerification {
 
     @Override
     public boolean processPayment(int amount) {
-        System.out.println("📱 LinePay 呼叫中...");
-        System.out.println("請掃描螢幕上的 QR Code... (模擬中)");
+        System.out.println("LinePay 跳轉中...");
+        System.out.println("請掃描螢幕上的 QR Code...");
         System.out.println("支付點數確認中... 支付金額: " + amount + "元");
-        return true; // 模擬支付成功
+        return true; 
     }
 
     @Override
