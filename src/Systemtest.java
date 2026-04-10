@@ -9,8 +9,14 @@ import Appointment.AppointmentReceipt;
 import Appointment.GroomingAppointment;
 import Appointment.TimeSlot.TimeSlot;
 import Appointment.TimeSlot.TimeSlotManager;
+import NotificationSystem.EmailNotifier;
+import NotificationSystem.LineNotifier;
+import NotificationSystem.NotificationHandler;
+import NotificationSystem.ReminderService;
+import NotificationSystem.SMSNotifier;
 import Payment.CashPayment;
 import Payment.CreditCardPayment;
+import Payment.LinePayPayment;
 import Payment.PaymentHandler;
 import Payment.PaymentSystem;
 import Payment.Transaction;
@@ -29,13 +35,18 @@ public class Systemtest {
     private static AppointmentManager manager = new AppointmentManager();
     private static Payment.TransactionManager transactionManager = new Payment.TransactionManager();
     private static GroomingAppointment appointment = null;
+    private static NotificationHandler notificationHandler = new NotificationHandler();
+    private static ReminderService reminderService = new ReminderService(notificationHandler);
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
+        notificationHandler.addNotifier(new EmailNotifier());
+        notificationHandler.addNotifier(new SMSNotifier());
+        notificationHandler.addNotifier(new LineNotifier());
 
         while (running) {
-            System.out.println("\n=== 歡迎使用寵物美容服務系統 ===");
+            System.out.println("\n=== 寵物美容服務系統 ===");
             
             // 1. 根據角色顯示對應選單
             if (currentUser == null) {
@@ -82,13 +93,13 @@ public class Systemtest {
     }
 
     private static void showCustomerMenu() {
-        System.out.println("--- 歡迎使用本服務系統！ (" + currentUser.getName() + ") ---");
+        System.out.println("--- 歡迎回來！ (" + currentUser.getName() + ") ---");
         System.out.println("3. 新增寵物 / 4. 預約服務 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢交易紀錄 / 10. 查看我的寵物 / 0. 登出");
     }
 
     private static void showAdminMenu() {
         System.out.println("--- 管理者模式 ---");
-        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 9. 查看所有預約 / 11. 產生財務報告 / 12. 新增管理員工 0. 登出");
+        System.out.println("3. 新增寵物 / 4. 預約服務 / 5. 查看所有用戶 / 6. 查詢預約紀錄 / 7. 結帳服務 / 8. 查詢所有交易 / 9. 查看所有預約 / 11. 產生財務報告 / 12. 管理員專區 0. 登出");
     }
 
     private static void showStaffMenu() {
@@ -109,7 +120,7 @@ public class Systemtest {
             case 9 -> viewAllAppointments(scanner); // 管理者功能
             case 10 -> viewMyPets(scanner); // 顧客功能
             case 11 -> generateFinancialReport(scanner); // 管理者功能
-            case 12 -> adminCreateAccount(scanner); // 管理者功能
+            case 12 -> adminList(scanner); // 管理者功能
             case 0 -> logout();
             default -> System.out.println("無效選項");
         }
@@ -249,6 +260,21 @@ public class Systemtest {
                         );
                         manager.addReceipt(receipt);
                         System.out.println(receipt);
+                        // --- 新增：發送預約成功通知與排定提醒 ---
+                        System.out.println("\n系統正在處理預約通知...");
+                        
+                        // 1. 立即發送「預約成功」確認訊息
+                        String successMessage = String.format(
+                            "【預約成功確認】您已成功預約 %s %s 的寵物美容服務。寵物：%s",
+                            date, start, petName1
+                        );
+
+                        notificationHandler.notifyAll(currentUser.getEmail(), successMessage);
+
+                        // 2. 呼叫 ReminderService 排定（並模擬發送）前一日提醒
+                        reminderService.scheduleReminder(currentUser.getEmail(), date, start);
+
+                        System.out.println("=== 預約程序完成 ===");
 
                         } else {
                             System.out.println("該時段不可預約");
@@ -325,20 +351,30 @@ public class Systemtest {
 
                     System.out.print("請選擇要結帳的單號 (輸入數字，按 0 取消): ");
                     int choice = scanner.nextInt();
-                    scanner.nextLine(); // 吃掉換行符
+                    scanner.nextLine(); 
 
                     if (choice > 0 && choice <= unpaidReceipts.size()) {
                         AppointmentReceipt selected = unpaidReceipts.get(choice - 1);
 
-                        // --- 優化後的新流程：選擇支付方式 ---
-                        System.out.println("\n請選擇支付方式: (1) 現金 (2) 信用卡");
+                        System.out.println("\n請選擇支付方式: (1) 現金 (2) 信用卡 (3) LinePay");
                         System.out.print("您的選擇: ");
                         int payType = scanner.nextInt();
                         scanner.nextLine();
-
                         // 建立處理器與支付物件
                         PaymentHandler handler = new PaymentHandler();
-                        PaymentSystem selectedMethod = (payType == 1) ? new CashPayment() : new CreditCardPayment();
+                        PaymentSystem selectedMethod;
+
+                        // 根據輸入決定使用的策略
+                        if (payType == 1) {
+                            selectedMethod = new CashPayment();
+                        } else if (payType == 2) {
+                            selectedMethod = new CreditCardPayment();
+                        } else if (payType == 3) {
+                            selectedMethod = new LinePayPayment(); //新增linepay
+                        } else {
+                            System.out.println("無效的支付選擇");
+                            return;
+                        }
 
                         // 4. 驗證、計算總額、印出收據
                         boolean success = handler.handleProcess(
@@ -371,9 +407,9 @@ public class Systemtest {
                             selected.setPaid(true); 
                             transactionManager.addTransaction(transaction);
 
-                            System.out.println("✅ 結帳成功！狀態已同步至系統。");
+                            System.out.println("結帳成功！狀態已同步至系統。");
                         } else {
-                            System.out.println("❌ 支付失敗，交易已取消。");
+                            System.out.println("支付失敗，交易已取消。");
                         }
 
                     } else {
@@ -430,7 +466,7 @@ public class Systemtest {
                     }
 
                     System.out.println("\n========================================");
-                    System.out.println("   🐾 " + currentUser.getName() + " 的寵物清單 🐾");
+                    System.out.println("        親愛的 " + currentUser.getName() +  "  您的寵物清單 ");
                     System.out.println("========================================");
 
                     // 2. 透過 UserService 取得該 Email 對應的寵物清單
@@ -463,7 +499,7 @@ public class Systemtest {
                     }
 
                     System.out.println("\n==========================================================================");
-                    System.out.println("                📊 寵物美容服務系統 - 年度/月度 財務報表 📊");
+                    System.out.println("                寵物美容服務系統 - 年度/月度 財務報表");
                     System.out.println("==========================================================================");
                     System.out.println("報表產出時間: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     System.out.println("--------------------------------------------------------------------------");
@@ -500,7 +536,7 @@ public class Systemtest {
                         double average = (paidCount > 0) ? totalRevenue / paidCount : 0;
 
                         System.out.println("--------------------------------------------------------------------------");
-                        System.out.printf(" 📈 統計總結： %n");
+                        System.out.printf("  統計總結： %n");
                         System.out.printf("    ▶ 總成交筆數： %d 筆 %n", paidCount);
                         System.out.printf("    ▶ 總累積營收： NT$ %,.0f %n", totalRevenue);
                         System.out.printf("    ▶ 平均客單價： NT$ %,.0f %n", average);
@@ -508,23 +544,47 @@ public class Systemtest {
                     System.out.println("==========================================================================\n");
                 }
 
-                // 管理者新增員工帳號
-                private static void adminCreateAccount(Scanner scanner) {
-                    // 這裡可以複用註冊邏輯，但允許輸入角色
-                    System.out.println("=== [管理員專區] 建立內部帳號 ===");
-                    // ... 輸入姓名、密碼、Email ...
-                    System.out.print("姓名: ");
-                    String name = scanner.nextLine();
-                    System.out.print("密碼: ");
-                    String password = scanner.nextLine();
-                    System.out.print("Email: ");
-                    String email = scanner.nextLine();
-                    System.out.print("指派角色 (ADMIN/STAFF): ");
-                    String roleInput = scanner.nextLine().trim().toUpperCase();
-                    
-                    // 驗證邏輯...
-                    User internalUser = new User(name, password, email, UserRole.valueOf(roleInput));
-                    userService.register(internalUser);
+                // 管理者专区
+                private static void adminList(Scanner scanner) {
+                    if (currentUser == null || currentUser.getRole() != UserRole.ADMIN) {
+                        System.out.println("【系統訊息】權限不足，僅限管理员使用");
+                        return;
+                    }
+                    while(true){
+                        System.out.println("=== [管理員專區] ===");
+                        System.out.println("1. 列出所有員工(STAFF)帳號");
+                        System.out.println("2. 新增員工帳號");
+                        System.out.println("0. 返回選單");
+                        System.out.println("請選擇: ");
+                        String subChoice = scanner.nextLine();
+                        if(subChoice.equals("1")){
+                            System.out.print("\n=== 員工清單 === \n");
+                            List<User> allUsers = userService.getAllUsers();
+                            long count = allUsers.stream().filter(u -> u.getRole() == UserRole.STAFF)
+                                .peek(u -> System.out.println("員工姓名: " + u.getName() 
+                                + " | Email : " + u.getEmail())).count();
+                                System.out.println("\n================ \n");
+                            if(count == 0){
+                                System.out.println("目前暫無員工。");
+                            }
+                        }else if (subChoice .equals("2")){
+                            System.out.print("\n--- 建立新員工帳號 ---\n");
+                        // ... 輸入姓名、密碼、Email ...
+                        System.out.print("姓名: ");
+                        String name = scanner.nextLine();
+                        System.out.print("密碼: ");
+                        String password = scanner.nextLine();
+                        System.out.print("Email: ");
+                        String email = scanner.nextLine();
+                        User newStaff = new User(name, password, email, UserRole.STAFF); 
+                        String result = userService.register(newStaff); 
+                        System.out.println(result);
+                        }else if (subChoice .equals("0")){
+                            break;
+                        }else{
+                            System.out.print("無效選擇，請重新输入!");
+                        }
+                    }
                 }
                 // 登出
                 private static void logout() {
